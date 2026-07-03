@@ -1,5 +1,6 @@
-# Timedivers Manager V2.0
+# Timedivers Manager V2
 Version manager for Steam games
+Based on [Timedivers Manager](https://github.com/leem919/timedivers-manager)
 
 # Setup
 1. In the Steam properties of the game you wish to downgrade, set the game to only update when you launch it.
