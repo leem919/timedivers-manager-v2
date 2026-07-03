@@ -8,7 +8,7 @@ Based on [Timedivers Manager](https://github.com/leem919/timedivers-manager)
 2. Take note of whether or not you're opted into a beta version and check which one it is.
 3. Create a new folder anywhere and place timediversvermanv2.exe into it. You can grab that from the [releases](https://github.com/leem919/timedivers-manager-v2/releases) or build it yourself.
 4. Open Microsoft Edge, go to [steamdb.info](https://steamdb.info) and log into your steam account. Make sure to check 'Remember Me'.
-5. Run timediversvermanv2.exe, browse and navigate to the steamapps folder that contains the Common folder, and then select it. (Don't select the Common folder itself)
+5. Run timediversvermanv2.exe, add any steamapps folders that contain the Common folder, and then select it. (Don't select the Common folder itself) You can add the steamapps folder from any drive you have games installed on.
 6. Select the game, run the folder setup, and update the manifests.
 7. Select a beta, if necessary, and then download a version. You can use the Steam Console or the Depot Downloader (Instructions below).
 8. If using the Steam Console, check if any depots are already downloaded, they might be for a different version and should be deleted to be safe. 
