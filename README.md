@@ -33,6 +33,6 @@ The Depot Downloader is a little slower, but it's also a dedicated tool for down
 # Building
 1. Install Python 3 from [python.org](https://python.org)
 2. Install the dependencies with `pip install -r requirements.txt`
-3. Run `pyinstaller --onefile --clean --noconsole --add-data "blackhole.ico;." --icon=blackhole.ico timediversverman.py`
+3. Run `pyinstaller --onefile --clean --noconsole --add-data "blackhole.ico;." --icon=blackhole.ico timediversvermanv2.py`
 
 <img width="1122" height="750" alt="Screenshot" src="https://i.imgur.com/ofQgAih.png"/>
