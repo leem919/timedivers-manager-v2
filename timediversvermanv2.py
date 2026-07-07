@@ -11,6 +11,8 @@ import sys
 import ctypes
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from tkinter.scrolledtext import ScrolledText
+import queue as _queue
 import scraper
 
 CONFIG_FILE = "config.json"
@@ -152,7 +154,8 @@ class SteamConsoleWindow(tk.Toplevel):
         self.branch = branch
         self.manifests = manifests
         self.depots = game_info["depots"]
-        self.content_folder = get_content_folder(game_info)
+        self.content_folder = None
+        self.steamapps_folders = config_data.get("steamapps_folders", [])
         self.config_data = config_data
         self.on_import_complete = on_import_complete
 
@@ -180,8 +183,9 @@ class SteamConsoleWindow(tk.Toplevel):
     def _build_ui(self):
         header = tk.Frame(self, bg=self.bg)
         header.pack(fill="x", padx=12, pady=(10, 4))
-        tk.Label(header, text=f"Content: {self.content_folder}",
-                 bg=self.bg, fg="#8899aa", font=("Segoe UI", 9)).pack(anchor="w")
+        self.content_label = tk.Label(header, text="Searching for content folder...",
+                                      bg=self.bg, fg="#8899aa", font=("Segoe UI", 9))
+        self.content_label.pack(anchor="w")
 
 
         ttk.Separator(self, orient="horizontal").pack(fill="x", padx=12, pady=4)
@@ -236,15 +240,36 @@ class SteamConsoleWindow(tk.Toplevel):
                         style="Import.Horizontal.TProgressbar").pack(
                             fill="x", padx=12, pady=(0, 8))
 
+    def _find_content_folder(self):
+        for folder in self.steamapps_folders:
+            candidate = os.path.join(folder, "content", f"app_{self.app_id}")
+            if os.path.isdir(candidate):
+                return os.path.join(folder, "content")
+        return None
+
     def _refresh_depot_status(self):
+        self.content_folder = self._find_content_folder()
+        if self.content_folder:
+            self.content_label.config(
+                text=f"Content: {self.content_folder}", fg="#8899aa")
+        else:
+            self.content_label.config(
+                text="Content folder not found. Run the below commands in the Steam Console, then refresh.",
+                fg="#e8a020")
+
         all_present = True
         for depot_id, action_frame in self.depot_action_frames.items():
             for w in action_frame.winfo_children():
                 w.destroy()
 
-            depot_path = os.path.join(self.content_folder, f"app_{self.app_id}",
-                                      f"depot_{depot_id}")
-            present = os.path.isdir(depot_path)
+            if self.content_folder:
+                depot_path = os.path.join(self.content_folder, f"app_{self.app_id}",
+                                          f"depot_{depot_id}")
+                present = os.path.isdir(depot_path)
+            else:
+                depot_path = None
+                present = False
+
             if not present:
                 all_present = False
 
@@ -252,7 +277,8 @@ class SteamConsoleWindow(tk.Toplevel):
                 tk.Label(action_frame, text="Downloaded", bg=self.bg, fg=self.fg,
                          font=("Segoe UI", 10)).pack(side="left")
                 ttk.Button(action_frame, text="Delete",
-                           command=lambda p=depot_path: self._delete_depot(p)).pack(
+                           command=lambda p=depot_path: self._delete_depot(p),
+                           state="normal" if depot_path else "disabled").pack(
                                side="left", padx=10)
             else:
                 manifest_id = (self.manifests.get(self.branch, {})
@@ -353,6 +379,52 @@ class SteamConsoleWindow(tk.Toplevel):
         self.import_btn.config(state="normal")
         messagebox.showerror("Import Failed", f"An error occurred:\n{error}", parent=self)
 
+# Redirect out and err to queue
+
+class StdoutRedirector:
+    def __init__(self, text_queue):
+        self.text_queue = text_queue
+
+    def write(self, string):
+        self.text_queue.put(string)
+
+    def flush(self):
+        pass
+
+# Scraper output display
+
+class ScraperLogWindow(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Scraper Console Output")
+        self.geometry("650x400")
+        self.configure(bg=parent.bg)
+
+        self.transient(parent)
+        self.grab_set() 
+
+        self.text_area = ScrolledText(
+            self, 
+            bg=parent.panel, 
+            fg=parent.fg,
+            font=("Consolas", 9), 
+            state="disabled",
+            relief="flat"
+        )
+        self.text_area.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.close_btn = ttk.Button(self, text="Close", command=self.destroy, state="disabled")
+        self.close_btn.pack(pady=(0, 5))
+
+    def append(self, text):
+        self.text_area.config(state="normal")
+        self.text_area.insert(tk.END, text)
+        self.text_area.see(tk.END)
+        self.text_area.config(state="disabled")
+        
+    def enable_close(self):
+        self.close_btn.config(state="normal")
+
 
 # Main App
 
@@ -364,7 +436,7 @@ class VersionManagerApp(tk.Tk):
             self.iconbitmap(resource_path("blackhole.ico"))
         except Exception as e:
             print(f"Warning: Could not set icon: {e}")
-        self.title("Timedivers Manager v2")
+        self.title("Timedivers Manager V2")
         self.geometry("900x600")
 
         self.bg    = "#1b2838"
@@ -556,11 +628,18 @@ class VersionManagerApp(tk.Tk):
         save_config(self.config_data)
         self._refresh_games()
 
+    def _update_game_combo_display(self):
+        self.game_combo["values"] = [
+            ("✓  " if is_junction(get_active_folder(self.games[app_id])) else "    ")
+            + self.games[app_id]["name"]
+            for app_id in self._sorted_game_ids
+        ]
+
     def _refresh_games(self):
         self.games = detect_games(self.config_data.get("steamapps_folders", []))
         sorted_games = sorted(self.games.items(), key=lambda x: x[1]["name"].lower())
         self._sorted_game_ids = [app_id for app_id, _ in sorted_games]
-        self.game_combo["values"] = [f"{info['name']}" for _, info in sorted_games]
+        self._update_game_combo_display()
 
         current = self.config_data.get("current_app_id")
         if current and current in self.games:
@@ -632,6 +711,7 @@ class VersionManagerApp(tk.Tk):
                 btn.config(state="disabled")
             self.update_btn.config(state="disabled")
             self.setup_btn.config(text="Setup Folders", state="normal")
+        self._update_game_combo_display()
 
     # Setup / Revert
 
@@ -687,7 +767,7 @@ class VersionManagerApp(tk.Tk):
                                 f"  From: {installdir}\n"
                                 f"  To:   {installdir}_steam\n\n"
                                 f"Location: {common}\n\n"
-                                f"Then reopen this app.")
+                                f"Then run the folder setup again. The junction will be created.")
             open_explorer(common)
             return
 
@@ -966,39 +1046,77 @@ class VersionManagerApp(tk.Tk):
     # Scraper
 
     def run_scraper(self):
-        if not self.current_app_id:
-            return
+            if not self.current_app_id:
+                return
 
-        game_info = self.games[self.current_app_id]
-        depots = game_info["depots"]
-        depot_list = "\n".join(f"  {d}" for d in depots)
+            game_info = self.games[self.current_app_id]
+            depots = game_info["depots"]
+            depot_list = "\n".join(f"  {d}" for d in depots)
 
-        if not messagebox.askyesno(
-            "Update List",
-            f"Microsoft Edge will be used to scrape SteamDB for {game_info['name']}.\n\n"
-            f"It will be restarted in debug mode. Please ensure you are logged into your "
-            f"Steam account on SteamDB with 'Remember Me' checked.\n\n"
-            f"The following {len(depots)} depot ID(s) will be scraped:\n{depot_list}\n\n"
-            f"Some of these may be DLC depots. Consider uninstalling DLCs "
-            f"before scraping.\n\n"
-            f"Continue?"
-        ):
-            return
+            if not messagebox.askyesno(
+                "Update List",
+                f"Microsoft Edge will be used to scrape SteamDB for {game_info['name']}.\n\n"
+                f"It will be restarted in debug mode. Please ensure you are logged into your "
+                f"Steam account on SteamDB with 'Remember Me' checked.\n\n"
+                f"The following {len(depots)} depot ID(s) will be scraped:\n{depot_list}\n\n"
+                f"Some of these may be DLC depots. Consider uninstalling DLCs "
+                f"before scraping.\n\n"
+                f"Continue?"
+            ):
+                return
 
-        def worker():
-            asyncio.run(scraper.main(self.current_app_id, game_info["depots"]))
-            self.after(0, self._scraper_done)
+            self._log_queue = _queue.Queue()
+            self._log_win = ScraperLogWindow(self)
+            
+            self._orig_stdout = sys.stdout
+            self._orig_stderr = sys.stderr
+            sys.stdout = StdoutRedirector(self._log_queue)
+            sys.stderr = StdoutRedirector(self._log_queue)
 
-        threading.Thread(target=worker, daemon=True).start()
+            def poll_log():
+                try:
+                    while True:
+                        msg = self._log_queue.get_nowait()
+                        self._log_win.append(msg)
+                except _queue.Empty:
+                    pass
+                
+                if getattr(self, '_log_poll_id', None) is not None:
+                    self._log_poll_id = self.after(100, poll_log)
+
+            self._log_poll_id = self.after(100, poll_log)
+
+            def worker():
+                asyncio.run(scraper.main(self.current_app_id, game_info["depots"]))
+                self.after(0, self._scraper_done)
+
+            threading.Thread(target=worker, daemon=True).start()
 
     def _scraper_done(self):
+        if getattr(self, '_log_poll_id', None):
+            self.after_cancel(self._log_poll_id)
+            self._log_poll_id = None
+
+        sys.stdout = self._orig_stdout
+        sys.stderr = self._orig_stderr
+
+        try:
+            while True:
+                self._log_win.append(self._log_queue.get_nowait())
+        except _queue.Empty:
+            pass
+            
+        self._log_win.append("\nScraping complete.")
+        self._log_win.enable_close()
+
         self.current_manifests = load_manifests(self.current_app_id)
         branches = ["None"] + [b for b in self.current_manifests if b != "None"]
         self.beta_combo["values"] = branches
         if self.beta_var.get() not in branches:
             self.beta_var.set("None")
+            
         self.refresh_version_list()
-        messagebox.showinfo("Update Complete", "Manifest list has been updated.")
+        messagebox.showinfo("Update Complete", "Manifest list has been updated.", parent=self._log_win)
 
 
 # Entry Point
