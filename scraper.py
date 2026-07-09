@@ -2,12 +2,16 @@ import asyncio
 import subprocess
 import time
 import os
+import sys
 import json
+from pathlib import Path
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from datetime import datetime
 
 EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+_base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+DEBUG_DIR = Path(_base_dir) / "edge_data"
 DEBUG_PORT = 9222
 MANIFESTS_DIR = "manifests"
 
@@ -44,17 +48,17 @@ def normalize_date(date_str):
 
 
 def launch_edge():
-    subprocess.run(["taskkill", "/IM", "msedge.exe", "/F"],
+    subprocess.run(["taskkill", "/IM", "msedge.exe", "/F", "/T"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     process = subprocess.Popen([
         EDGE_PATH,
         f"--remote-debugging-port={DEBUG_PORT}",
-        "--remote-debugging-address=127.0.0.1",
+        f"--user-data-dir={DEBUG_DIR}",
         "--no-first-run",
         "--no-default-browser-check",
-        "https://steamdb.info/"
+        "https://steamdb.info/login"
     ])
-    print("Edge launched at https://steamdb.info/")
+    print("Edge launched at https://steamdb.info/login")
     time.sleep(5)
     return process
 
@@ -126,12 +130,17 @@ async def scrape_patch_titles(page, app_id):
     return patch_titles
 
 
-async def main(app_id, depots):
+async def main(app_id, depots, wait_fn=None):
     os.makedirs(MANIFESTS_DIR, exist_ok=True)
     manifest_file = os.path.join(MANIFESTS_DIR, f"{app_id}.json")
     manifests = json.load(open(manifest_file)) if os.path.exists(manifest_file) else {}
 
     edge_process = launch_edge()
+
+    if wait_fn:
+        print("Edge is ready. Please log in to SteamDB, then click Continue.")
+        wait_fn()
+        print("Starting scraping...")
 
     async with async_playwright() as p:
         browser = await p.chromium.connect_over_cdp(f"http://127.0.0.1:{DEBUG_PORT}")
@@ -161,7 +170,7 @@ async def main(app_id, depots):
             edge_process.wait(timeout=5)
         except Exception:
             pass
-        subprocess.run(["taskkill", "/IM", "msedge.exe", "/F"],
+        subprocess.run(["taskkill", "/IM", "msedge.exe", "/F", "/T"],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     for branch_data in manifests.values():
