@@ -6,20 +6,19 @@ Based on [Timedivers Manager](https://github.com/leem919/timedivers-manager)
 # Setup
 1. In the Steam properties of the game you wish to downgrade, set the game to only update when you launch it.
 2. Create a new folder anywhere and place timediversvermanv2.exe into it. You can grab that from the [releases](https://github.com/leem919/timedivers-manager-v2/releases) or build it yourself.
-3. Open Microsoft Edge, go to [steamdb.info](https://steamdb.info) and log into your steam account. Make sure to check 'Remember Me'.
-4. Run timediversvermanv2.exe, add any steamapps folders that contain the Common folder, and then select it. (Don't select the Common folder itself) You can add the steamapps folder from any drive you have games installed on.
-5. Select the game, run the folder setup, and update the manifests.
-6. Download a version. You can use the Steam Console or the Depot Downloader (Instructions below).
-7. If using the Steam Console, check if any depots are already downloaded, they might be for a different version and should be deleted to be safe. 
-8. Select "Open Steam Console" and wait for the Steam window to open and switch to the console tab.
-9. Select "Copy" next to the first command, paste it into the console, and hit enter to start the download.
-10. Wait for the console to say the depot download is complete, then repeat for the next depots.
-11. Once the console says they're all downloaded, refresh and then select "Import Version".
+3. Run timediversvermanv2.exe, add any steamapps folders that contain the Common folder, and then select it. (Don't select the Common folder itself) You can add the steamapps folder from any drive you have games installed on.
+4. Select the game, run the folder setup, and update the manifests. You will need to sign into your Steam account in SteamDB.
+5. Download a version. You can use the Steam Console or the Depot Downloader (Instructions below).
+6. If using the Steam Console, check if any depots are already downloaded, they might be for a different version and should be deleted to be safe. 
+7. Select "Open Steam Console" and wait for the Steam window to open and switch to the console tab.
+8. Select "Copy" next to the first command, paste it into the console, and hit enter to start the download.
+9. Wait for the console to say the depot download is complete, then repeat for the next depots.
+10. Once the console says they're all downloaded, refresh and then select "Import Version".
 
 # Things to Know
 1. Always check for game updates on Steam. If an update comes out, make sure that the Steam version is active in the version manager and then download the update. Updates cannot be easily skipped, and downloading an update while an old version is active will cause issues. Also set the Steam version as active if opting into or out of a beta.
 2. It is recommended to switch back to the steam version when not actively playing for a while in case steam does a file check.
-3. The scraping process for updating the list may appear stuck at some points. If it appears stuck for longer than a minute or two, close everything and try again.
+3. The scraping process for updating the manifests may appear stuck at some points. If it appears stuck for longer than a minute or two, close everything and try again.
 4. This program does not prompt you for, or store, your password. That is all handled with the Depot Downloader and choosing to remember your password just passes the remember-password flag to it.
 
 # Depot Downloader
