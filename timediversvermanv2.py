@@ -1058,10 +1058,10 @@ class VersionManagerApp(tk.Tk):
 
         if not messagebox.askyesno(
             "Update List",
-            f"Microsoft Edge will be used to scrape SteamDB for {game_info['name']}.\n\n"
+            f"A Chromium-based browser will be used to scrape SteamDB.\n\n"
             f"It will be restarted in debug mode. Please ensure you are logged into your "
             f"Steam account on SteamDB, then return here and select Continue.\n\n"
-            f"The following {len(depots)} depot ID(s) will be scraped:\n{depot_list}\n\n"
+            f"The following {len(depots)} depot ID(s) will be scraped for {game_info['name']}:\n{depot_list}\n\n"
             f"Some of these may be DLC depots. Consider uninstalling DLCs "
             f"before scraping.\n\n"
             f"Continue?"
