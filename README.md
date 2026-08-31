@@ -18,8 +18,9 @@ Based on [Timedivers Manager](https://github.com/leem919/timedivers-manager)
 # Things to Know
 1. Always check for game updates on Steam. If an update comes out, make sure that the Steam version is active in the version manager and then download the update. Updates cannot be easily skipped, and downloading an update while an old version is active will cause issues. Also set the Steam version as active if opting into or out of a beta.
 2. It is recommended to switch back to the steam version when not actively playing for a while in case steam does a file check.
-3. The scraping process for updating the manifests may appear stuck at some points. If it appears stuck for longer than a minute or two, close everything and try again.
-4. This program does not prompt you for, or store, your password. That is all handled with the Depot Downloader and choosing to remember your password just passes the remember-password flag to it.
+3. If Steam sees the old files and tries to update, try again by redownloading the version you want and instead set the update option in properties to let steam decide.
+4. The scraping process for updating the manifests may appear stuck at some points. If it appears stuck for longer than a minute or two, close everything and try again.
+5. This program does not prompt you for, or store, your password. That is all handled with the Depot Downloader and choosing to remember your password just passes the remember-password flag to it.
 
 # Depot Downloader
 The Depot Downloader is a little slower, but it's also a dedicated tool for downloading depots and will show you the download progress.
