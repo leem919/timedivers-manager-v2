@@ -213,7 +213,6 @@ async def launch_context(playwright, browser_info):
         "--no-default-browser-check",
         "--disable-blink-features=AutomationControlled",
         "--disable-features=msEdgeAutomationOverlay",
-        "--exclude-switches=enable-automation",
     ]
 
     proc = subprocess.Popen([
@@ -395,7 +394,7 @@ async def main(app_id, depots, wait_fn=None, browser_select_fn=None):
 
         if wait_fn:
             print(f"{browser_info[0]} is ready. Please log in to SteamDB, then click Continue.")
-            wait_fn()
+            await asyncio.get_running_loop().run_in_executor(None, wait_fn)
             print("Starting scraping...")
 
         for depot in depots:
